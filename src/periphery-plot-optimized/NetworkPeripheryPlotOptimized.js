@@ -16,7 +16,7 @@ import { EmbeddedGraph } from "./EmbeddedGraph.js";
 // ***********************************************************************************
 //
 
-class NetworkPeripheryPlotTP {
+class NetworkPeripheryPlotOptimized {
 
     // Properties
 
@@ -242,4 +242,4 @@ class NetworkPeripheryPlotTP {
     }
 }
 
-export { NetworkPeripheryPlotTP };
+export { NetworkPeripheryPlotOptimized };

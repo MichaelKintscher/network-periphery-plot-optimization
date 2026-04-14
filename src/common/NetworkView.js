@@ -8,7 +8,8 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import { ViewControl } from "../common/ViewControl.js";
 import { ViewportTransform } from "../common/ViewportTransform.js";
-import { NetworkPeripheryPlotTP } from "./NetworkPeripheryPlotTP.js";
+import { NetworkPeripheryPlotBaseline } from "../periphery-plot-baseline/NetworkPeripheryPlotBaseline.js";
+import { NetworkPeripheryPlotOptimized } from "../periphery-plot-optimized/NetworkPeripheryPlotOptimized.js";
 
 //
 // ***********************************************************************************
@@ -99,10 +100,11 @@ class NetworkView extends ViewControl {
         };
 
         switch (this.#peripheryPlotType) {
-            case "AP":
+            case "baseline":
+                this.#peripheryPlot = new NetworkPeripheryPlotBaseline(elementId, drawCenter, 200, 300, dataCopy);
                 break;
-            case "TP":
-                this.#peripheryPlot = new NetworkPeripheryPlotTP(elementId, drawCenter, 200, 300, dataCopy);
+            case "optimized":
+                this.#peripheryPlot = new NetworkPeripheryPlotOptimized(elementId, drawCenter, 200, 300, dataCopy);
                 break;
             case "None":
                 // Nothing to do.

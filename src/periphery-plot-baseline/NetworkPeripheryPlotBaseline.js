@@ -15,7 +15,7 @@ import { ViewportTransform } from "../common/ViewportTransform.js";
 // ***********************************************************************************
 //
 
-class NetworkPeripheryPlotTP {
+class NetworkPeripheryPlotBaseline {
 
     // Properties
 
@@ -317,4 +317,4 @@ class NetworkPeripheryPlotTP {
     }
 }
 
-export { NetworkPeripheryPlotTP };
+export { NetworkPeripheryPlotBaseline };

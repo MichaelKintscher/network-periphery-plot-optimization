@@ -6,7 +6,7 @@
 //
 
 import { DataManager } from "./common/DataManager.js";
-import { NetworkView } from "./periphery-plot-baseline/NetworkView.js";
+import { NetworkView } from "./common/NetworkView.js";
 
 //
 // ***********************************************************************************
@@ -51,7 +51,7 @@ class AppController {
     #onDataLoaded(data) {
 
         // Create the network view.
-        this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, data, "TP");
+        this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, data, "optimized");
     }
 
 }
