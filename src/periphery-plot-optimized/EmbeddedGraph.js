@@ -25,12 +25,17 @@ class EmbeddedGraph {
     delaunayToNodeMap;  // This is a hash map that maps Delaunay indices to their corresponding node IDs.
     nodeToDelaunayMap;  // This is a hash map that maps node IDs to their corresponding Delaunay indices.
 
+    prevClosest;        // This is the closest node (Delaunay index) to the viewport's center from the previous frame, which serves as a hint for finding the closest node in the current frame.
+
     constructor(edgeList) {
 
         // Initialize the node and Delaunay ID maps.
         this.nodeMap = new Map();
         this.delaunayToNodeMap = new Map();
         this.nodeToDelaunayMap = new Map();
+
+        // Initialize the previous closest node to zero.
+        this.prevClosest = 0;
 
         // Rebuild the acceleration structure.
         this.rebuild(edgeList);
@@ -135,11 +140,67 @@ class EmbeddedGraph {
      * @param {number} y - The y coordinate of the point.
      */
     findClosestNode(x, y) {
-        //
+        
+        // Use the Delaunay triangulation to find the closest node to the given coordinates.
+        // Start the search at the previous closest node.
+        let closestDelaunayId = this.delaunay.find(x, y, this.prevClosest);
+
+        // Update the previous closest node.
+        this.prevClosest = closestDelaunayId;
+
+        // Return the closest node.
+        let closestNodeId = this.delaunayToNodeMap.get(closestDelaunayId);
+        return this.nodeMap.get(closestNodeId);
     }
 
+    /**
+     * Gets the list of nodes that are in view based on the given center and radius.
+     * @param {Node} closest - The closest node to the viewport's center, which serves as the root of the breadth-first search.
+     * @param {number} x - The x coordinate of the viewport's center.
+     * @param {number} y - The y coordinate of the viewport's center.
+     * @param {number} r - The radius of the viewport.
+     * @returns {Map<string, Node>} - The set of nodes that are in view.
+     */
     getNodesInView(closest, x, y, r) {
-        //
+
+        // Initialize the in-view node set and explored set.
+        let inView = new Map();
+        let explored = new Map();
+
+        // Initialize the queue for the breadth-first search.
+        // Start at the closest node as the root of the search.
+        let queue = [closest];
+
+        // While there are still nodes to explore...
+        while (queue.length > 0) {
+            // Get the next node from the queue.
+            let current = queue.shift();
+
+            // Add the node to the explored set.
+            if (!explored.has(current.id)) {
+                explored.set(current.id, current);
+            }
+
+            // Check if the node is in view.
+            if (Math.pow(current.x - x, 2) + Math.pow(current.y - y, 2) < Math.pow(r, 2)) {
+                // The node is in view, so add it to the in-view node set.
+                if (!inView.has(current.id)) {
+                    inView.set(current.id, current);
+                }
+
+                // Add the current node's delaunay neighbors to the queue, if they have not already been explored.
+                let delaunayId = this.nodeToDelaunayMap.get(current.id);
+                this.delaunay.neighbors(delaunayId).forEach(neighborDelaunayId => {
+                    let neighborId = this.delaunayToNodeMap.get(neighborDelaunayId);
+                    if (!explored.has(neighborId)) {
+                        queue.push(this.nodeMap.get(neighborId));
+                    }
+                });
+
+            }
+        }
+
+        return inView;
     }
 
     /**
