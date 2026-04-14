@@ -27,6 +27,16 @@ class EmbeddedGraph {
 
     prevClosest;        // This is the closest node (Delaunay index) to the viewport's center from the previous frame, which serves as a hint for finding the closest node in the current frame.
 
+    /**
+     * Creates an instance of EmbeddedGraph acceleration structure.
+     * @param {Array<{source: *, target: *, sourceX: number, sourceY: number, targetX: number, targetY: number}>} edgeList - The list of edges in the graph, where each edge is an object with the following properties:
+     *      - source: The ID of the source node.
+     *      - target: The ID of the target node.
+     *      - sourceX: The x coordinate of the source node.
+     *      - sourceY: The y coordinate of the source node.
+     *      - targetX: The x coordinate of the target node.
+     *      - targetY: The y coordinate of the target node.
+     */
     constructor(edgeList) {
 
         // Initialize the node and Delaunay ID maps.
@@ -48,6 +58,16 @@ class EmbeddedGraph {
 // ***********************************************************************************
 //
 
+    /**
+     * Rebuilds the acceleration structure from the given edge list.
+     * @param {Array<{source: *, target: *, sourceX: number, sourceY: number, targetX: number, targetY: number}>} edgeList - The list of edges in the graph, where each edge is an object with the following properties:
+     *      - source: The ID of the source node.
+     *      - target: The ID of the target node.
+     *      - sourceX: The x coordinate of the source node.
+     *      - sourceY: The y coordinate of the source node.
+     *      - targetX: The x coordinate of the target node.
+     *      - targetY: The y coordinate of the target node.
+     */
     rebuild(edgeList) {
 
         // Initialize the flat array for input to the Delaunay triangulation.
@@ -106,8 +126,9 @@ class EmbeddedGraph {
 
     /**
      * Gets a list of intersections based on the given circle center and radius.
-     * @param {number} x 
-     * @param {number} y 
+     * @param {number} x - The x coordinate of the viewport's center.
+     * @param {number} y - The y coordinate of the viewport's center.
+     * @param {number} r - The radius of the viewport.
      */
     getIntersections(x, y, r) {
 
@@ -206,7 +227,7 @@ class EmbeddedGraph {
     /**
      * Gets the list of edges that connect a node in view to a node out of view.
      * @param {Map<string,Node>} inView 
-     * @returns 
+     * @returns {Array<Edge>} - The list of edges connecting nodes in view to nodes out of view.
      */
     getEdgeSet(inView) {
 
@@ -231,6 +252,16 @@ class EmbeddedGraph {
 
     }
 
+    /**
+     * Finds the intersections between the edges in the set and the circular viewport.
+     * @param {Array<Edge>} edgeSet - The list of edges to test for intersection, where each edge is an object with the following properties:
+     *      - source: The ID of the source node.
+     *      - target: The ID of the target node.
+     * @param {number} cx - The x coordinate of the viewport's center.
+     * @param {number} cy - The y coordinate of the viewport's center.
+     * @param {number} r - The radius of the viewport.
+     * @returns {Array<Edge>} - The list of edges with the intersection point with the viewport added via the `intX` and `intY` properties.
+     */
     getEdgeIntersects(edgeSet, cx, cy, r) {
         
         // Add the intersection to each edge in the set...
