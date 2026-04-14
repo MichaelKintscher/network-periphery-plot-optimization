@@ -23,7 +23,7 @@ import { NetworkView } from "./periphery-plot-baseline/NetworkView.js";
 class AppController {
 
     // Constants
-    static FILE_PATH = "./data/network_1.csv";
+    static FILE_PATH = "./data/graph_lg_19_45.csv"; //"./data/network_1.csv";
     static CHART_WRAPPER_ID = "chart-wrapper";
     static SVG_ID = "network-view";
 

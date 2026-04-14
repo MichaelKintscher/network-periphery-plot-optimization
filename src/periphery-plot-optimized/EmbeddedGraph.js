@@ -137,6 +137,7 @@ class EmbeddedGraph {
 
         // 2. Do a bread-first search to identify the in-view node set.
         let inView = this.getNodesInView(closest, x, y, r);
+        //console.log(inView);
 
         // 3. Create the edge set from the original graph as all edges connecting a node in the node set to a node not in the node set.
         let possibleEdges = this.getEdgeSet(inView);
@@ -235,7 +236,7 @@ class EmbeddedGraph {
         let edgeSet = [];
 
         // For each node in view...
-        inView.forEach((sourceId, source) => {
+        inView.forEach((source, sourceId) => {
             // For each edge connecting to that node...
             source.topoAdjacencyList.forEach(targetId => {
 
@@ -243,7 +244,7 @@ class EmbeddedGraph {
                 if (!inView.has(targetId)) {
                     // If the target node is not in view, add the edge to the edge set.
                     let target = this.nodeMap.get(targetId);
-                    this.edgeSet.push(new Edge(source.id, target.id, source.x, source.y, target.x, target.y));
+                    edgeSet.push(new Edge(source.id, target.id, source.x, source.y, target.x, target.y));
                 }
             });
         });
@@ -253,7 +254,7 @@ class EmbeddedGraph {
     }
 
     /**
-     * Finds the intersections between the edges in the set and the circular viewport.
+     * Finds the intersections between the edges in the set and the circular viewport. Based on: https://math.stackexchange.com/questions/103556/circle-and-line-segment-intersection
      * @param {Array<Edge>} edgeSet - The list of edges to test for intersection, where each edge is an object with the following properties:
      *      - source: The ID of the source node.
      *      - target: The ID of the target node.
@@ -270,6 +271,7 @@ class EmbeddedGraph {
             // Initialize the intercepts to undefined.
             edge.intX = undefined;
             edge.intY = undefined;
+            edge.angle = undefined;
             
             // Plug the parametric equation for the line segment into the equation for the circle
             //      then rearrange as a quadratic equation for "t".
@@ -301,6 +303,8 @@ class EmbeddedGraph {
                 //      Get x and y by plugging t1 into the parametric line equation.
                 edge.intX = t1 * edge.x1 + (1 - t1) * edge.x2;
                 edge.intY = t1 * edge.y1 + (1 - t1) * edge.y2;
+                edge.angle = Math.atan2(edge.intX - cx, edge.intY - cy);
+
                 return edge;
             }
             if (t2 >= 0 && t2 <= 1) {
@@ -308,6 +312,8 @@ class EmbeddedGraph {
                 //      Get x and y by plugging t2 into the parametric line equation.
                 edge.intX = t2 * edge.x1 + (1 - t2) * edge.x2;
                 edge.intY = t2 * edge.y1 + (1 - t2) * edge.y2;
+                edge.angle = Math.atan2(edge.intX - cx, edge.intY - cy);
+
                 return edge;
             } 
 
@@ -360,6 +366,9 @@ class Edge {
     y1;         // The y coordinate of the source node.
     x2;         // The x coordinate of the target node.
     y2;         // The y coordinate of the target node.
+    intX;       // The x coordinate of the edge's intersection point with the viewport, if it exists.
+    intY;       // The y coordinate of the edge's intersection point with the viewport, if it exists.
+    angle;      // The angle of the edge's intersection point with the viewport, if it exists.
 
     constructor(source, target, x1, y1, x2, y2) {
 
@@ -369,6 +378,10 @@ class Edge {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
+        this.intX = undefined;
+        this.intY = undefined;
+        this.angle = undefined;
+
     }
 }
 
