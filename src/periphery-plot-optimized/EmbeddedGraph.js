@@ -326,6 +326,9 @@ class EmbeddedGraph {
 // ***********************************************************************************
 //
 
+/**
+ * * This class represents a node in the embedded graph, which contains the node's ID, coordinates, and adjacency lists.
+ */
 class Node {
 
     // Properties
@@ -345,6 +348,9 @@ class Node {
     }
 }
 
+/**
+ * This class represents an edge in the embedded graph, which contains the source and target node IDs, the coordinates of the source and target nodes, and the coordinates of the intersection with the viewport (if it exists).
+ */
 class Edge {
 
     // Properties
@@ -366,4 +372,4 @@ class Edge {
     }
 }
 
-export { EmbeddedGraph };
+export { EmbeddedGraph, Node, Edge };
