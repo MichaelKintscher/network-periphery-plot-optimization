@@ -122,6 +122,7 @@ class EmbeddedGraph {
 
         // Build the Delaunay triangulation from the flat array of points.
         this.delaunay = new d3.Delaunay(points);
+        // console.log(`Rebuilt embedded graph.`);
     }
 
     /**
@@ -134,10 +135,11 @@ class EmbeddedGraph {
 
         // 1. Find the closest node to the viewport's center.
         let closest = this.findClosestNode(x, y);
+        // console.log(`Closest node to (${x}, ${y}) is node ${closest.id} at (${closest.x}, ${closest.y}).`);
 
         // 2. Do a bread-first search to identify the in-view node set.
         let inView = this.getNodesInView(closest, x, y, r);
-        //console.log(inView);
+        // console.log(inView);
 
         // 3. Create the edge set from the original graph as all edges connecting a node in the node set to a node not in the node set.
         let possibleEdges = this.getEdgeSet(inView);
@@ -162,6 +164,8 @@ class EmbeddedGraph {
      * @param {number} y - The y coordinate of the point.
      */
     findClosestNode(x, y) {
+
+        // console.log(`Finding closest node to (${x}, ${y}) with previous closest Delaunay index ${this.prevClosest}.`);
         
         // Use the Delaunay triangulation to find the closest node to the given coordinates.
         // Start the search at the previous closest node.

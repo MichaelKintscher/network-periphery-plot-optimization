@@ -224,6 +224,14 @@ class NetworkPeripheryPlotOptimized {
         //console.log(`focusCenter: ${this.#centerTransform.x}, drawCenter: ${this.#drawCenter.x}`);
 
     }
+
+    /**
+     * Gets the intersections for the current center transform and focus distance.
+     * @returns 
+     */
+    getIntersections() {
+        return this.#embeddedGraph.getIntersections(this.#centerTransform.x, this.#centerTransform.y, this.#focusDistance);
+    }
     
 //
 // ***********************************************************************************

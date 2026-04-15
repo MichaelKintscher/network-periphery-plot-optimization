@@ -212,6 +212,7 @@ class NetworkView extends ViewControl {
             var x = this.#viewportXScale.invert(transform.x); //-this.#xScale(transform.x)// + (this.#width / 2);
             var y = this.#viewportYScale.invert(transform.y); //-this.#yScale(transform.y)// + (this.#height / 2);
             var d3Transform = d3.zoomIdentity.translate(x, y).scale(transform.k);
+            console.log(`Updating viewport with transform: ${transform.x}, ${transform.y}, k: ${transform.k}`);
             this.#ignoreZoom = true;
             this.#svg.call(this.#zoomBehavior.transform, d3Transform);
             this.#ignoreZoom = false;
@@ -381,6 +382,14 @@ class NetworkView extends ViewControl {
         this.#nodes
             .attr("cx", d => this.#xScale(d.x))
             .attr("cy", d => this.#yScale(d.y));
+    }
+
+    /**
+     * Gets the intersections for the current center transform and focus distance.
+     * @returns 
+     */
+    getIntersections() {
+        return this.#peripheryPlot.getIntersections();
     }
     
 //
