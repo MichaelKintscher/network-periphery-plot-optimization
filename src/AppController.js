@@ -25,13 +25,20 @@ import { ViewportTransform } from "./common/ViewportTransform.js";
 class AppController {
 
     // Constants
-    static FILE_PATH = "./data/graph_lg_19_45.csv"; //"./data/network_1.csv";
+    //static FILE_PATH = "./data/graph_lg_19_45.csv";
+    static FILE_PATH = "./data/network_1.csv";
     static CHART_WRAPPER_ID = "chart-wrapper";
     static SVG_ID = "network-view";
 
     static BENCHMARK_RUN_BTN_ID = "benchmark-run-btn";
     static BENCHMARK_ITERATIONS_INPUT_ID = "benchmark-iterations-input";
     static BENCHMARK_ITERATIONS_OUTPUT_ID = "benchmark-iterations-output";
+
+    static CHART_SETTINGS_CARD_ID = "chart-settings-card";
+    static EDGES_TOGGLE_ID = "show-edges-switch";
+    static DELAUNAY_TOGGLE_ID = "show-delaunay-switch";
+    static INTERSECTIONS_TOGGLE_ID = "show-intersections-switch";
+    static PERIPHERY_PLOT_TOGGLE_ID = "show-periphery-plot-switch";
 
     // Properties
     #networkView;       // A reference to the network view.
@@ -67,9 +74,20 @@ class AppController {
         // Wire the event handlers.
         $(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).on("input", () => this.#onBenchmarkIterationsChanged());
         $(`#${AppController.BENCHMARK_RUN_BTN_ID}`).on("click", () => this.#onBenchmarkRunClicked());
+        $(`#${AppController.CHART_SETTINGS_CARD_ID} input[type="checkbox"]`).on("change", (event) => this.#onSwitchToggled(event.target.id));
 
-        // Initialise the benchmark iterations output.
+        // Initialize the benchmark iterations output.
         $(`#${AppController.BENCHMARK_ITERATIONS_OUTPUT_ID}`).text($(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).val());
+
+        // Initialize the chart settings switches.
+        $(`#${AppController.EDGES_TOGGLE_ID}`).prop("checked", true);
+        this.#networkView.setEdgeVisibility(true);
+        $(`#${AppController.INTERSECTIONS_TOGGLE_ID}`).prop("checked", false);
+        this.#networkView.setIntersectionVisibility(false);
+        $(`#${AppController.DELAUNAY_TOGGLE_ID}`).prop("checked", false);
+        this.#networkView.setDelunayVisibility(false);
+        $(`#${AppController.PERIPHERY_PLOT_TOGGLE_ID}`).prop("checked", true);
+        this.#networkView.setPeripheryPlotVisibility(true);
 
     }
 
@@ -82,6 +100,24 @@ class AppController {
     #onBenchmarkRunClicked() {
         const iterations = $(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).val();
         this.#benchmark.run(iterations);
+    }
+
+    #onSwitchToggled(switchId) {
+        switch (switchId) {
+            case AppController.EDGES_TOGGLE_ID:
+                this.#networkView.toggleEdges();
+                break;
+            case AppController.DELAUNAY_TOGGLE_ID:
+                this.#networkView.toggleDelaunay();
+                break;
+            case AppController.INTERSECTIONS_TOGGLE_ID:
+                this.#networkView.toggleIntersections();
+                break;
+            case AppController.PERIPHERY_PLOT_TOGGLE_ID:
+                this.#networkView.togglePeripheryPlot();
+                break;
+        }
+        // console.log(`Switch toggled: ${switchId}`);
     }
 
 }

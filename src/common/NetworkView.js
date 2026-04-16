@@ -55,6 +55,9 @@ class NetworkView extends ViewControl {
     #linkData;
     #nodeData;
 
+    #delaunayPath;
+    #showDelaunay;
+
     #peripheryPlotEnabled;
     #peripheryPlotType;
     #peripheryPlot;
@@ -89,9 +92,6 @@ class NetworkView extends ViewControl {
 
         // Initialize the chart.
         this.initializeChart();
-        
-        // Draw the chart.
-        this.drawChart();
 
         // Initialize the periphery plot, if it is enabled.
         let drawCenter = {
@@ -110,6 +110,26 @@ class NetworkView extends ViewControl {
                 // Nothing to do.
                 break;
         }
+
+        // Draw Delaunay triangulation if enabled.
+        this.#showDelaunay = false;
+        if (this.#peripheryPlotEnabled) {
+            let path = this.#peripheryPlot.getDelaunayPath();
+
+            this.#delaunayPath = this.#chart.append("g")
+                .classed("delaunay", true)
+                .append("path")
+                    .attr("d", path)
+                    .attr("display", this.#showDelaunay ? "block" : "none")
+                    .style("fill", "none")
+                    .style("stroke", "#44F")
+                    .style("stroke-width", "1px")
+                    .style("stroke-opacity", 1);
+                
+        }
+        
+        // Draw the chart.
+        this.drawChart();
     }
 
 //
@@ -149,6 +169,8 @@ class NetworkView extends ViewControl {
         this.#chart.selectAll("circle.ref-test")
             .attr("cx", () => this.#xScale(0))
             .attr("cy", () => this.#yScale(0));
+
+        this.#delaunayPath.attr("transform", `translate(${this.#xScale(0)}, ${this.#yScale(0)}) scale(${event.transform.k}, ${-event.transform.k})`);
 
         // Create an instance of the new viewport transform.
         let transform = new ViewportTransform({
@@ -390,6 +412,59 @@ class NetworkView extends ViewControl {
      */
     getIntersections() {
         return this.#peripheryPlot.getIntersections();
+    }
+
+//
+// ***********************************************************************************
+//                      VIEW CONFIGURATION METHODS
+//
+// ***********************************************************************************
+//
+
+    setEdgeVisibility(visible) {
+        this.#links.style("display", visible ? "block" : "none");
+    }
+
+    toggleEdges() {
+        this.#links.style("display", function(d) {
+            return d3.select(this).style("display") === "none" ? "block" : "none";
+        });
+    }
+
+    setDelunayVisibility(visible) {
+        this.#showDelaunay = visible;
+        if (this.#delaunayPath) {
+            this.#delaunayPath.style("display", visible ? "block" : "none");
+        }
+    }
+
+    toggleDelaunay() {
+        this.#showDelaunay = !this.#showDelaunay;
+        this.setDelunayVisibility(this.#showDelaunay);
+    }
+
+    setIntersectionVisibility(visible) {
+        if (this.#peripheryPlotEnabled) {
+            this.#peripheryPlot.setIntersectionVisibility(visible);
+        }
+    }
+
+    toggleIntersections() {
+        if (this.#peripheryPlotEnabled) {
+            this.#peripheryPlot.toggleIntersections();
+        }
+    }
+
+    setPeripheryPlotVisibility(visible) {
+        if (this.#peripheryPlotEnabled) {
+            this.#peripheryPlot.setPlotVisibility(visible);
+        }
+    }
+
+    togglePeripheryPlot() {
+        if (this.#peripheryPlotEnabled) {
+            this.#peripheryPlot.togglePlotVisibility();
+        }
     }
     
 //

@@ -36,6 +36,10 @@ class NetworkPeripheryPlotOptimized {
     #arc;
     #distanceScale;
 
+    // Chart configuration
+    #showIntersections;
+    #showPlot;
+
     // Graph data
     #nodes;
     #nodeProperties;
@@ -65,6 +69,9 @@ class NetworkPeripheryPlotOptimized {
         // Default the distance to 1 and the center to the identity transform.
         this.#contextDistance = 1;
         this.#centerTransform = new ViewportTransform({ x: 0, y: 0, k: 1 });
+
+        this.#showIntersections = true;
+        this.#showPlot = true;
 
         // Initialize the chart.
         this.initializeChart();
@@ -116,6 +123,7 @@ class NetworkPeripheryPlotOptimized {
         this.#svg.append("g")
             .attr("transform", `translate(${this.#drawCenter.x},${this.#drawCenter.y})`)
             .attr("text-anchor", "middle")
+            .classed("periphery-plot-axis", true)
             .call(g => g.append("text")
                 .attr("y", d => this.#distanceScale(this.#distanceScale.ticks(3).pop()))
                 .attr("dy", "1.5em")
@@ -197,18 +205,25 @@ class NetworkPeripheryPlotOptimized {
             .join("g")
                 .classed("leaf", true);
         
-        // intersections.append("circle")
-        //     .attr("cx", d => (d.x - this.#centerTransform.x) * this.#centerTransform.k)
-        //     .attr("cy", d => (-d.y + this.#centerTransform.y) * this.#centerTransform.k)
-        //     .attr("r", 4)
-        //     .style("fill", "orange")
-        //     .style("stroke", "black")
-        //     .style("stroke-width", "1px");
-        intersections.append("path")
-                    .attr("d", this.#arc)
-                    .attr("fill", "#99F")
-                    .attr("opacity", 0.3);
         intersections.append("circle")
+            .attr("cx", d => (d.intX - this.#centerTransform.x) * this.#centerTransform.k)
+            .attr("cy", d => (-d.intY + this.#centerTransform.y) * this.#centerTransform.k)
+            .attr("r", 4)
+            .style("fill", "orange")
+            .style("stroke", "black")
+            .style("stroke-width", "1px")
+            .attr("display", this.#showIntersections ? "block" : "none")
+            .classed("intersection-point", true);
+
+        let lollipops = intersections.append("g")
+            .attr("display", this.#showPlot ? "block" : "none")
+            .classed("lollipop", true);
+        
+        lollipops.append("path")
+            .attr("d", this.#arc)
+            .attr("fill", "#99F")
+            .attr("opacity", 0.3);
+        lollipops.append("circle")
             .attr("transform", d =>
                 `rotate(${d.angle * 180 / Math.PI - 90})
                 translate(${this.#distanceScale(this.#nodeProperties.get(d.target).degree)},0)`
@@ -220,7 +235,7 @@ class NetworkPeripheryPlotOptimized {
             .attr("opacity", 0.4)
             .style("stroke", "black")
             .style("stroke-width", "1px");
-                
+            
         //console.log(`focusCenter: ${this.#centerTransform.x}, drawCenter: ${this.#drawCenter.x}`);
 
     }
@@ -231,6 +246,41 @@ class NetworkPeripheryPlotOptimized {
      */
     getIntersections() {
         return this.#embeddedGraph.getIntersections(this.#centerTransform.x, this.#centerTransform.y, this.#focusDistance);
+    }
+
+    getDelaunayPath() {
+        return this.#embeddedGraph.delaunay.render();
+    }
+
+//
+// ***********************************************************************************
+//                      VIEW CONFIGURATION METHODS
+//
+// ***********************************************************************************
+//
+
+    setIntersectionVisibility(visible) {
+        this.#showIntersections = visible;
+        let display = visible ? "block" : "none";
+        this.#svg.selectAll("g.periphery-plot g.leaf .intersection-point")
+            .attr("display", display);
+    }
+
+    toggleIntersections() {
+        this.#showIntersections = !this.#showIntersections;
+        this.setIntersectionVisibility(this.#showIntersections);
+    }
+
+    setPlotVisibility(visible) {
+        this.#showPlot = visible;
+        let display = visible ? "block" : "none";
+        this.#svg.selectAll("g.periphery-plot-axis, g.lollipop")
+            .attr("display", display);
+    }
+
+    togglePlotVisibility() {
+        this.#showPlot = !this.#showPlot;
+        this.setPlotVisibility(this.#showPlot);
     }
     
 //
