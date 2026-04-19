@@ -26,13 +26,19 @@ class AppController {
 
     // Constants
     //static FILE_PATH = "./data/graph_lg_19_45.csv";
-    static FILE_PATH = "./data/network_1.csv";
+    static FILE_PATH = "./data/graph_md_7_47.csv";
+    //static FILE_PATH = "./data/graph_sm_9_58.csv";
+    //static FILE_PATH = "./data/network_1.csv";
     static CHART_WRAPPER_ID = "chart-wrapper";
     static SVG_ID = "network-view";
 
     static BENCHMARK_RUN_BTN_ID = "benchmark-run-btn";
+    static BENCHMARK_CLEAR_BTN_ID = "benchmark-clear-btn";
+    static BENCHMARK_EXPORT_BTN_ID = "benchmark-export-btn";
     static BENCHMARK_ITERATIONS_INPUT_ID = "benchmark-iterations-input";
     static BENCHMARK_ITERATIONS_OUTPUT_ID = "benchmark-iterations-output";
+    static BENCHMARK_RESULTS_CHART_WRAPPER_ID = "benchmark-results-chart-wrapper";
+    static BENCHMARK_RESULTS_SVG_ID = "benchmark-results-svg";
 
     static CHART_SETTINGS_CARD_ID = "chart-settings-card";
     static EDGES_TOGGLE_ID = "show-edges-switch";
@@ -68,12 +74,16 @@ class AppController {
         this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, data, "optimized");
         this.#networkView.updateViewport(new ViewportTransform({x: 0, y: 0, k: 1}));
 
-        // Create the benchmark.
-        this.#benchmark = new Benchmark(this.#networkView);
+        // Create the benchmark and results chart.
+        $(`#${AppController.BENCHMARK_RESULTS_CHART_WRAPPER_ID}`).append(`<svg id="${AppController.BENCHMARK_RESULTS_SVG_ID}" width="200" height="200"></svg>`);
+        let resultsSvg = $(`#${AppController.BENCHMARK_RESULTS_SVG_ID}`);
+        this.#benchmark = new Benchmark(this.#networkView, resultsSvg);
 
         // Wire the event handlers.
         $(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).on("input", () => this.#onBenchmarkIterationsChanged());
         $(`#${AppController.BENCHMARK_RUN_BTN_ID}`).on("click", () => this.#onBenchmarkRunClicked());
+        $(`#${AppController.BENCHMARK_CLEAR_BTN_ID}`).on("click", () => this.#onBenchmarkClearClicked());
+        $(`#${AppController.BENCHMARK_EXPORT_BTN_ID}`).on("click", () => this.#onBenchmarkExportClicked());
         $(`#${AppController.CHART_SETTINGS_CARD_ID} input[type="checkbox"]`).on("change", (event) => this.#onSwitchToggled(event.target.id));
 
         // Initialize the benchmark iterations output.
@@ -100,6 +110,22 @@ class AppController {
     #onBenchmarkRunClicked() {
         const iterations = $(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).val();
         this.#benchmark.run(iterations);
+    }
+
+    #onBenchmarkClearClicked() {
+        this.#benchmark.clearResults();
+    }
+
+    #onBenchmarkExportClicked() {
+        const downloadUri = this.#benchmark.exportResults();
+        if (downloadUri) {
+            const link = document.createElement("a");
+            link.href = downloadUri;
+            link.download = "benchmark_results.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 
     #onSwitchToggled(switchId) {

@@ -32,6 +32,7 @@ class NetworkView extends ViewControl {
     #margin = { top: 60, right: 60, bottom: 60, left: 60 };
     #width = this.CHART_WIDTH - this.#margin.left - this.#margin.right;
     #height = this.CHART_HEIGHT - this.#margin.top - this.#margin.bottom;
+    #dataTransform;
 
     #svg;
     #chart;
@@ -46,6 +47,7 @@ class NetworkView extends ViewControl {
     #yScale;
     #zoomBehavior;
     #ignoreZoom;
+    #viewportTransform;
 
     // Network properties.
     #nodeColorScale;
@@ -75,16 +77,18 @@ class NetworkView extends ViewControl {
         let extent = d3.extent(this.data.reduce((accum, item) => {
             return accum.concat([item["x1"],item["y1"],item["x2"],item["y2"]]);
         }, []));
-        let dataTransform =d3.scaleLinear()
+        this.#dataTransform =d3.scaleLinear()
             .domain(extent)
             .range([0, 1]);
         this.data = this.data.map(d => {
-            d["x1"] = dataTransform(d["x1"]) * scalar;
-            d["y1"] = dataTransform(d["y1"]) * scalar;
-            d["x2"] = dataTransform(d["x2"]) * scalar;
-            d["y2"] = dataTransform(d["y2"]) * scalar;
+            d["x1"] = this.#dataTransform(d["x1"]) * scalar;
+            d["y1"] = this.#dataTransform(d["y1"]) * scalar;
+            d["x2"] = this.#dataTransform(d["x2"]) * scalar;
+            d["y2"] = this.#dataTransform(d["y2"]) * scalar;
             return d;
         });
+
+        console.log(this.data);
 
         // Store a reference to the config parameter.
         this.#peripheryPlotType = peripheryPlotType;
@@ -178,17 +182,19 @@ class NetworkView extends ViewControl {
             y: this.#viewportYScale(event.transform.y), //this.#viewportYScale(this.#yScale.invert(-event.transform.y)),// - this.#yScale.invert((this.#height)), // Negate the value because the transform is an offset.
             k: event.transform.k
         });
+        //console.log(`Viewport transform: ${transform.x}, ${transform.y}, k: ${transform.k}`);
 
         // Update the periphery plot, if it is enabled.
         if (this.#peripheryPlotEnabled) {
 
-            let peripheryPlotTransform = new ViewportTransform({
+            this.#viewportTransform = new ViewportTransform({
                 x: (this.#xScale.invert(this.#width / 2) - this.#xScale.invert(0)) - (this.#xScale.invert(0) - this.#xScale.invert(-event.transform.x)),//this.#xScale.invert(event.transform.x),//(this.#width / 2) - event.transform.x,
                 y: this.#height + (this.#yScale.invert(this.#height / 2) - this.#yScale.invert(0)) - (this.#yScale.invert(0) - this.#yScale.invert(-event.transform.y)),//this.#yScale.invert(event.transform.y),//event.transform.y,//(this.#height / 2) + event.transform.y,
                 k: event.transform.k
             });
+            // console.log(`Viewport transform for periphery plot: ${this.#dataTransform.invert(this.#viewportTransform.x / this.#width)}, ${this.#dataTransform.invert(this.#viewportTransform.y / this.#width)}, k: ${this.#viewportTransform.k}`);
             let focusDistance = this.#xScale.invert(this.#viewportRadius) - this.#xScale.invert(0); // The distance is the relative change of the viewport radius, not the absolute mapped value.
-            this.#peripheryPlot.setCenterTransform(peripheryPlotTransform, focusDistance);
+            this.#peripheryPlot.setCenterTransform(this.#viewportTransform, focusDistance);
         }
         
         // Raise the viewport changed event.
@@ -386,6 +392,15 @@ class NetworkView extends ViewControl {
             .style("stroke", "black")
             .style("stroke-width", "3px")
             .style("fill", "none");
+
+        // Add the viewport center.
+        this.#chart.append("circle")
+            .attr("cx", this.#width / 2)
+            .attr("cy", this.#height / 2)
+            .attr("r", 2)
+            .style("stroke", "black")
+            .style("stroke-width", "3px")
+            .style("fill", "steelblue");
     }
 
     /**
@@ -412,6 +427,37 @@ class NetworkView extends ViewControl {
      */
     getIntersections() {
         return this.#peripheryPlot.getIntersections();
+    }
+
+    getNodeCount() {
+        return this.#nodeData.length;
+    }
+
+    getEdgeCount() {
+        return this.#linkData.length;
+    }
+
+    /**
+     * 
+     * @param {string} coordinates - The coordinate system to return the transform in. Can be "viewport" or "data".
+     *  - "viewport" returns the transform in terms of the viewport coordinates, where (0,0) is the center of the chart.
+     *  - "data" returns the transform in terms of the data coordinates for reference with the original data file.
+     * @returns 
+     */
+    getViewportTransform(coordinates = "viewport") {
+
+        switch (coordinates) {
+            case "viewport":
+                return this.#viewportTransform;
+            case "data":
+                return new ViewportTransform({
+                    x: this.#dataTransform.invert(this.#viewportTransform.x / this.#width),
+                    y: this.#dataTransform.invert(this.#viewportTransform.y / this.#width),
+                    k: this.#viewportTransform.k
+                });
+        }
+
+        return;
     }
 
 //

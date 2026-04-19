@@ -148,7 +148,11 @@ class EmbeddedGraph {
         let intersections = this.getEdgeIntersects(possibleEdges, x, y, r);
 
         // Return the edge set with the intersections.
-        return intersections;
+        return {
+            closest: closest,
+            inView: inView,
+            intersections: intersections
+        };
     }
 
 //
