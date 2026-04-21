@@ -30,7 +30,7 @@ const width = CHART_WIDTH - margin.left - margin.right;
 const height = CHART_HEIGHT - margin.top - margin.bottom;
 
 // Data Points
-const DATA_POINT_OPACITY = 0.4;
+const DATA_POINT_OPACITY = 0.7;
 const AVG_POINT_SIZE = 10;
 const ADD_JITTER = true;
 const JITTER_WIDTH = 10;
@@ -40,6 +40,11 @@ const FONT_SIZE_AXIS = "25px";
 const FONT_SIZE_AXIS_LABEL = "30px";
 const X_AXIS_LABEL_OFFSET = 90;
 const Y_AXIS_LABEL_OFFSET = 90;
+
+// Trend Lines
+const TREND_LINE_OPACITY = 1;
+const TREND_LINE_WIDTH = 2.5;
+const FONT_SIZE_TREND_LINE_LABEL = "20px";
 
 d3.csv(FILE_PATH).then((data) => {
 
@@ -192,6 +197,10 @@ function drawTimeComplexity(data) {
     let yAxis = chart.append("g")
         .classed("axis-group", true)
         .call(d3.axisLeft(yScale));
+    yAxis//.call(g => g.select(".domain").remove()) // remove the vertical bar on the axis
+        .call(g => g.selectAll(".tick line").clone() // duplicate the tick marks with the following properties
+            .attr("x2", width)
+            .attr("stroke-opacity", 0.2));
     yAxis.selectAll("text")
         .style("font-size", FONT_SIZE_AXIS);
 
@@ -238,6 +247,50 @@ function drawTimeComplexity(data) {
                 .attr("opacity", DATA_POINT_OPACITY)
         );
 
+    // Plot the trend lines.
+    let baseTrendPathData = [
+        { x: 0, y: baseTrend.start },
+        { x: 500, y: baseTrend.end }
+    ]
+    chart.append("path")
+        .datum(baseTrendPathData)
+        .attr("class", "trendline")
+        .attr("fill", "none")
+        .attr("stroke", colorScale("baseline"))
+        .attr("opacity", TREND_LINE_OPACITY)
+        .attr("stroke-width", TREND_LINE_WIDTH)
+        .attr("d", d3.line()
+            .x(function (d) { return xScale(d.x); })
+            .y(function(d) { return yScale(d.y); }));
+    chart.append("text")
+        .attr("transform", `translate(${xScale(500) - 180},${yScale(baseTrend.end) + 55})`)
+        .style("text-anchor", "end")
+        .style("font-size", FONT_SIZE_TREND_LINE_LABEL)
+        .style("font-family", "sans-serif")
+        .text("Baseline O(n)");
+        
+    // Plot the trend lines.
+    let accelTrendPathData = [
+        { x: 0, y: accelTrend.start },
+        { x: 500, y: accelTrend.end }
+    ]
+    chart.append("path")
+        .datum(accelTrendPathData)
+        .attr("class", "trendline")
+        .attr("fill", "none")
+        .attr("stroke", colorScale("accelerated"))
+        .attr("opacity", TREND_LINE_OPACITY)
+        .attr("stroke-width", TREND_LINE_WIDTH)
+        .attr("d", d3.line()
+            .x(function (d) { return xScale(d.x); })
+            .y(function(d) { return yScale(d.y); }));
+    chart.append("text")
+        .attr("transform", `translate(${xScale(500) - 180},${yScale(accelTrend.end) + 25})`)
+        .style("text-anchor", "end")
+        .style("font-size", FONT_SIZE_TREND_LINE_LABEL)
+        .style("font-family", "sans-serif")
+        .text("Accelerated O(1)");
+
     // Plot the averages.
     let baseAvgPoints = chart.selectAll(".average-point.baseline")
         .data(baseAverages, d => d)
@@ -269,38 +322,6 @@ function drawTimeComplexity(data) {
                 .style("stroke", "black")
                 .style("stroke-width", "1px")
         );
-
-    // Plot the trend lines.
-    let baseTrendPathData = [
-        { x: 0, y: baseTrend.start },
-        { x: 500, y: baseTrend.end }
-    ]
-    chart.append("path")
-        .datum(baseTrendPathData)
-        .attr("class", "trendline")
-        .attr("fill", "none")
-        .attr("stroke", colorScale("baseline"))
-        .attr("opacity", 0.4)
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(function (d) { return xScale(d.x); })
-            .y(function(d) { return yScale(d.y); }));
-        
-    // Plot the trend lines.
-    let accelTrendPathData = [
-        { x: 0, y: accelTrend.start },
-        { x: 500, y: accelTrend.end }
-    ]
-    chart.append("path")
-        .datum(accelTrendPathData)
-        .attr("class", "trendline")
-        .attr("fill", "none")
-        .attr("stroke", colorScale("accelerated"))
-        .attr("opacity", 0.4)
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(function (d) { return xScale(d.x); })
-            .y(function(d) { return yScale(d.y); }));
 }
 
 function drawScatterplot(data) {

@@ -121,14 +121,14 @@ class NetworkView extends ViewControl {
         if (this.#peripheryPlotType == "accelerated") {
             let path = this.#peripheryPlot.getDelaunayPath();
 
-            this.#delaunayPath = this.#chart.append("g")
+            this.#delaunayPath = this.#chart.insert("g", ":first-child")
                 .classed("delaunay", true)
                 .append("path")
                     .attr("d", path)
                     .attr("display", this.#showDelaunay ? "block" : "none")
                     .style("fill", "none")
                     .style("stroke", "#44F")
-                    .style("stroke-width", "1px")
+                    .style("stroke-width", "0.5px")
                     .style("stroke-opacity", 1);
                 
         }
@@ -175,9 +175,7 @@ class NetworkView extends ViewControl {
             .attr("cx", () => this.#xScale(0))
             .attr("cy", () => this.#yScale(0));
 
-        if (this.#showDelaunay) {
-            this.#delaunayPath.attr("transform", `translate(${this.#xScale(0)}, ${this.#yScale(0)}) scale(${event.transform.k}, ${-event.transform.k})`);
-        }
+        this.#delaunayPath.attr("transform", `translate(${this.#xScale(0)}, ${this.#yScale(0)}) scale(${event.transform.k}, ${-event.transform.k})`);
 
         // Create an instance of the new viewport transform.
         let transform = new ViewportTransform({
@@ -363,7 +361,7 @@ class NetworkView extends ViewControl {
             .selectAll()
             .data(this.#linkData)
                 .join("line")
-                    .attr("stroke-width", 1);
+                    .attr("stroke-width", 2);
 
         // Add a circle for each node.
         this.#nodes = this.#chart.append("g")
