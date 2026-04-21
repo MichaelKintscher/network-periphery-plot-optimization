@@ -48,6 +48,7 @@ class NetworkView extends ViewControl {
     #zoomBehavior;
     #ignoreZoom;
     #viewportTransform;
+    #focusDistance;
 
     // Network properties.
     #nodeColorScale;
@@ -107,7 +108,7 @@ class NetworkView extends ViewControl {
             case "baseline":
                 this.#peripheryPlot = new NetworkPeripheryPlotBaseline(elementId, drawCenter, 200, 300, dataCopy);
                 break;
-            case "optimized":
+            case "accelerated":
                 this.#peripheryPlot = new NetworkPeripheryPlotOptimized(elementId, drawCenter, 200, 300, dataCopy);
                 break;
             case "None":
@@ -117,7 +118,7 @@ class NetworkView extends ViewControl {
 
         // Draw Delaunay triangulation if enabled.
         this.#showDelaunay = false;
-        if (this.#peripheryPlotEnabled) {
+        if (this.#peripheryPlotType == "accelerated") {
             let path = this.#peripheryPlot.getDelaunayPath();
 
             this.#delaunayPath = this.#chart.append("g")
@@ -174,7 +175,9 @@ class NetworkView extends ViewControl {
             .attr("cx", () => this.#xScale(0))
             .attr("cy", () => this.#yScale(0));
 
-        this.#delaunayPath.attr("transform", `translate(${this.#xScale(0)}, ${this.#yScale(0)}) scale(${event.transform.k}, ${-event.transform.k})`);
+        if (this.#showDelaunay) {
+            this.#delaunayPath.attr("transform", `translate(${this.#xScale(0)}, ${this.#yScale(0)}) scale(${event.transform.k}, ${-event.transform.k})`);
+        }
 
         // Create an instance of the new viewport transform.
         let transform = new ViewportTransform({
@@ -193,8 +196,8 @@ class NetworkView extends ViewControl {
                 k: event.transform.k
             });
             // console.log(`Viewport transform for periphery plot: ${this.#dataTransform.invert(this.#viewportTransform.x / this.#width)}, ${this.#dataTransform.invert(this.#viewportTransform.y / this.#width)}, k: ${this.#viewportTransform.k}`);
-            let focusDistance = this.#xScale.invert(this.#viewportRadius) - this.#xScale.invert(0); // The distance is the relative change of the viewport radius, not the absolute mapped value.
-            this.#peripheryPlot.setCenterTransform(this.#viewportTransform, focusDistance);
+            this.#focusDistance = this.#xScale.invert(this.#viewportRadius) - this.#xScale.invert(0); // The distance is the relative change of the viewport radius, not the absolute mapped value.
+            this.#peripheryPlot.setCenterTransform(this.#viewportTransform, this.#focusDistance);
         }
         
         // Raise the viewport changed event.
@@ -429,6 +432,18 @@ class NetworkView extends ViewControl {
         return this.#peripheryPlot.getIntersections();
     }
 
+    getNodesInView() {
+        //
+        let inView = new Map();
+        this.#nodeData.forEach(node => {
+            if (this.#nodeInView(node)) {
+                inView.set(node.id, node);
+            }
+        })
+
+        return inView;
+    }
+
     getNodeCount() {
         return this.#nodeData.length;
     }
@@ -562,13 +577,22 @@ class NetworkView extends ViewControl {
         
         //console.log(this.#linkData);
     }
+
+    #nodeInView(node) {
+        
+        let pX = (node.x - this.#viewportTransform.x);
+        let pY = (node.y - this.#viewportTransform.y);
+        //console.log(`Node ${node.id} has dx ${pX} and dy ${pY}, and distance ${Math.sqrt(Math.pow(pX, 2) + Math.pow(pY, 2))}`);
+
+        return Math.pow(pX, 2) + Math.pow(pY, 2) < Math.pow(this.#focusDistance, 2);
+    }
     
-    //
-    // ***********************************************************************************
-    //                      SELECTION MANAGEMENT
-    //
-    // ***********************************************************************************
-    //
+//
+// ***********************************************************************************
+//                      SELECTION MANAGEMENT
+//
+// ***********************************************************************************
+//
     
         /**
          * Handles when a point in the visualization is clicked.

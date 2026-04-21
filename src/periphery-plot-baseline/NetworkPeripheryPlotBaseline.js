@@ -7,6 +7,7 @@
 
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import { ViewportTransform } from "../common/ViewportTransform.js";
+import { Edge } from "../periphery-plot-optimized/EmbeddedGraph.js";
 
 //
 // ***********************************************************************************
@@ -35,6 +36,10 @@ class NetworkPeripheryPlotBaseline {
     #arc;
     #distanceScale;
 
+    // Chart configuration
+    #showIntersections;
+    #showPlot;
+
     // Graph data
     #nodes;
     #nodeProperties;
@@ -50,6 +55,9 @@ class NetworkPeripheryPlotBaseline {
         // Default the distance to 1 and the center to the identity transform.
         this.#contextDistance = 1;
         this.#centerTransform = new ViewportTransform({ x: 0, y: 0, k: 1 });
+
+        this.#showIntersections = true;
+        this.#showPlot = true;
 
         // Initialize the chart.
         this.initializeChart();
@@ -70,7 +78,7 @@ class NetworkPeripheryPlotBaseline {
         // Create the arc generator.
         this.#arc = d3.arc()
             .innerRadius(this.#innerRadius)
-            .outerRadius(d => this.#distanceScale(this.#nodeProperties.find(n => n.id == d.outerNode).degree))
+            .outerRadius(d => this.#distanceScale(this.#nodeProperties.get(d.target).degree))
             .startAngle(d => d.angle - 0.01)
             .endAngle(d => d.angle + 0.01)
             .padAngle(1.5 / this.#innerRadius)
@@ -79,12 +87,14 @@ class NetworkPeripheryPlotBaseline {
         // Preprocess the graph data for faster use during drawing.
         let sourceSet = new Set(this.#data.map(d => d.source.id));
         let targetSet = new Set(this.#data.map(d => d.target.id));
-        this.#nodeProperties = Array.from(sourceSet.union(targetSet))
-            .map(d => {
-                return {
+        this.#nodeProperties = new Map();
+        Array.from(sourceSet.union(targetSet))
+            .forEach(d => {
+                let degree = this.#countNeighbors(d);
+                this.#nodeProperties.set(d, {
                     id: d,
-                    degree: this.#countNeighbors(d)
-                };
+                    degree: degree
+                });
             });
 
         console.log(this.#data);
@@ -92,7 +102,7 @@ class NetworkPeripheryPlotBaseline {
 
         // A radial y-scale
         this.#distanceScale = d3.scaleRadial()
-            .domain([0, d3.max(this.#nodeProperties.map(n => n.degree))])
+            .domain([0, d3.max(this.#nodeProperties.values().map(n => n.degree))])
             .range([this.#innerRadius, this.#outerRadius]);
 
         // Y Axis (distance).
@@ -176,29 +186,36 @@ class NetworkPeripheryPlotBaseline {
         //     .style("fill", "none");
         let intersections = plot
             .selectAll("g.leaf")
-            .data(contextData)
+            .data(contextData.intersections)
             .join("g")
                 .classed("leaf", true);
         
-        // intersections.append("circle")
-        //     .attr("cx", d => (d.x - this.#centerTransform.x) * this.#centerTransform.k)
-        //     .attr("cy", d => (-d.y + this.#centerTransform.y) * this.#centerTransform.k)
-        //     .attr("r", 4)
-        //     .style("fill", "orange")
-        //     .style("stroke", "black")
-        //     .style("stroke-width", "1px");
-        intersections.append("path")
-                    .attr("d", this.#arc)
-                    .attr("fill", "#99F")
-                    .attr("opacity", 0.3);
         intersections.append("circle")
+            .attr("cx", d => (d.intX - this.#centerTransform.x) * this.#centerTransform.k)
+            .attr("cy", d => (-d.intY + this.#centerTransform.y) * this.#centerTransform.k)
+            .attr("r", 4)
+            .style("fill", "orange")
+            .style("stroke", "black")
+            .style("stroke-width", "1px")
+            .attr("display", this.#showIntersections ? "block" : "none")
+            .classed("intersection-point", true);
+
+        let lollipops = intersections.append("g")
+            .attr("display", this.#showPlot ? "block" : "none")
+            .classed("lollipop", true);
+        
+        lollipops.append("path")
+            .attr("d", this.#arc)
+            .attr("fill", "#99F")
+            .attr("opacity", 0.3);
+        lollipops.append("circle")
             .attr("transform", d =>
                 `rotate(${d.angle * 180 / Math.PI - 90})
-                translate(${this.#distanceScale(this.#nodeProperties.find(n => n.id == d.outerNode).degree)},0)`
+                translate(${this.#distanceScale(this.#nodeProperties.get(d.target).degree)},0)`
             )
             .attr("cx", 0)
             .attr("cy", 0)
-            .attr("r", d => 2 * this.#nodeProperties.find(n => n.id == d.outerNode).degree)
+            .attr("r", d => 2 * this.#nodeProperties.get(d.target).degree)
             .style("fill", "#44F")
             .attr("opacity", 0.4)
             .style("stroke", "black")
@@ -206,6 +223,45 @@ class NetworkPeripheryPlotBaseline {
                 
         //console.log(`focusCenter: ${this.#centerTransform.x}, drawCenter: ${this.#drawCenter.x}`);
 
+    }
+
+    /**
+     * Gets the intersections for the current center transform and focus distance.
+     * @returns 
+     */
+    getIntersections() {
+        return this.#getViewportIntersections();
+    }
+
+//
+// ***********************************************************************************
+//                      VIEW CONFIGURATION METHODS
+//
+// ***********************************************************************************
+//
+
+    setIntersectionVisibility(visible) {
+        this.#showIntersections = visible;
+        let display = visible ? "block" : "none";
+        this.#svg.selectAll("g.periphery-plot g.leaf .intersection-point")
+            .attr("display", display);
+    }
+
+    toggleIntersections() {
+        this.#showIntersections = !this.#showIntersections;
+        this.setIntersectionVisibility(this.#showIntersections);
+    }
+
+    setPlotVisibility(visible) {
+        this.#showPlot = visible;
+        let display = visible ? "block" : "none";
+        this.#svg.selectAll("g.periphery-plot-axis, g.lollipop")
+            .attr("display", display);
+    }
+
+    togglePlotVisibility() {
+        this.#showPlot = !this.#showPlot;
+        this.setPlotVisibility(this.#showPlot);
     }
     
 //
@@ -232,7 +288,15 @@ class NetworkPeripheryPlotBaseline {
 
         //console.log(`cx: ${cx}, cy: ${cy}, r: ${r}`);
 
-        let intersects = this.#data.map(d => {
+        let edgeSet = this.#data.map(d => {
+
+            // Initialize the edge.
+            let edge = new Edge(d.source.id, d.target.id, d.x1, d.y1, d.x2, d.y2);
+
+            // Initialize the intercepts to undefined.
+            edge.intX = undefined;
+            edge.intY = undefined;
+            edge.angle = undefined;
 
             // Plug the parametric equation for the line segment into the equation for the circle
             //      then rearrange as a quadratic equation for "t".
@@ -244,7 +308,7 @@ class NetworkPeripheryPlotBaseline {
             // If the discriminant is < 0, the line segment does not intersect.
             if (discriminant < 0) {
                 // No intersection.
-                return { x: undefined, y: undefined };
+                return edge;
             }
 
             // Solve for t with the quadratic equation.
@@ -254,41 +318,43 @@ class NetworkPeripheryPlotBaseline {
             // The edge is passing through the viewport, but neither node is visible.
             if ((t1 >= 0 && t1 <= 1) && (t2 >= 0 && t2 <= 1)) {
                 // Ignore it.
-                return { x: undefined, y: undefined };
+                return edge;
             }
 
             if (t1 >= 0 && t1 <= 1) {
                 // The segment intersects at point t1.
                 //      Get x and y by plugging t1 into the parametric line equation.
-                return {
-                    x: t1 * d.x1 + (1 - t1) * d.x2,
-                    y: t1 * d.y1 + (1 - t1) * d.y2,
-                    outerNode: this.#nodeInView(d.source) ? d.target.id : d.source.id,
-                    innerNode: this.#nodeInView(d.source) ? d.source.id : d.target.id
-                };
+                edge.intX = t1 * edge.x1 + (1 - t1) * edge.x2;
+                edge.intY = t1 * edge.y1 + (1 - t1) * edge.y2;
+                edge.angle = Math.atan2(edge.intX - cx, edge.intY - cy);
+
+                return edge;
             }
             if (t2 >= 0 && t2 <= 1) {
                 // The segment intersects at point t2.
                 //      Get x and y by plugging t2 into the parametric line equation.
-                return {
-                    x: t2 * d.x1 + (1 - t2) * d.x2,
-                    y: t2 * d.y1 + (1 - t2) * d.y2,
-                    outerNode: this.#nodeInView(d.source) ? d.target.id : d.source.id,
-                    innerNode: this.#nodeInView(d.source) ? d.source.id : d.target.id
-                };
+                edge.intX = t2 * edge.x1 + (1 - t2) * edge.x2;
+                edge.intY = t2 * edge.y1 + (1 - t2) * edge.y2;
+                edge.angle = Math.atan2(edge.intX - cx, edge.intY - cy);
+
+                return edge;
             } 
 
             // Else there is no intersection.
-            return { x: undefined, y: undefined };
+            return edge;
         });
 
-        intersects = intersects.filter(i => i.x != undefined && i.y != undefined)
+        edgeSet = edgeSet.filter(i => i.intX != undefined && i.intY != undefined)
             .map(i => {
-                return { ...i, angle: this.#intersectionPointToAngle(i.x, i.y) };
+                return { ...i, angle: this.#intersectionPointToAngle(i.intX, i.intY) };
             });
         //console.log(intersects);
 
-        return intersects;
+        return {
+            closest: undefined,
+            inView: undefined,
+            intersections: edgeSet
+        };
     }
 
     #intersectionPointToAngle(x, y) {

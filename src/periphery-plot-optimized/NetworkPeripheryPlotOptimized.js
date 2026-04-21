@@ -185,7 +185,7 @@ class NetworkPeripheryPlotOptimized {
         this.#svg.selectAll("g.periphery-plot").remove();
         
         let contextData = this.#embeddedGraph.getIntersections(this.#centerTransform.x, this.#centerTransform.y, this.#focusDistance);
-        //console.log(contextData);
+        console.log(contextData);
 
         // Add a circle for each intersection.
         let plot = this.#svg.append("g")
@@ -201,7 +201,7 @@ class NetworkPeripheryPlotOptimized {
         //     .style("fill", "none");
         let intersections = plot
             .selectAll("g.leaf")
-            .data(contextData)
+            .data(contextData.intersections)
             .join("g")
                 .classed("leaf", true);
         

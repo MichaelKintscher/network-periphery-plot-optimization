@@ -33,9 +33,21 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Benchmarking</h5>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="acceleration-radio-group" id="acceleration-radio" value="accelerated">
+                            <label class="form-check-label" for="acceleration-radio">
+                                Accelerated
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="acceleration-radio-group" id="baseline-radio" value="baseline">
+                            <label class="form-check-label" for="baseline-radio">
+                                Baseline
+                            </label>
+                        </div>
                         <div>
                             <label for="benchmark-iterations-input" class="form-label">Number of Iterations</label>
-                            <input type="range" id="benchmark-iterations-input" class="form-range" min="1" max="100" value="10">
+                            <input type="range" id="benchmark-iterations-input" class="form-range" min="1" max="10000" value="10">
                             <output id="benchmark-iterations-output" for="benchmark-iterations-input" aria-hidden="true"></output>
                         </div>
                         <button id="benchmark-run-btn" class="btn btn-primary">Run</button>

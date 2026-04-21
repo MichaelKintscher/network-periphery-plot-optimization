@@ -25,13 +25,14 @@ import { ViewportTransform } from "./common/ViewportTransform.js";
 class AppController {
 
     // Constants
-    //static FILE_PATH = "./data/graph_lg_19_45.csv";
-    static FILE_PATH = "./data/graph_md_7_47.csv";
+    static FILE_PATH = "./data/graph_lg_19_45.csv";
+    //static FILE_PATH = "./data/graph_md_7_47.csv";
     //static FILE_PATH = "./data/graph_sm_9_58.csv";
     //static FILE_PATH = "./data/network_1.csv";
     static CHART_WRAPPER_ID = "chart-wrapper";
     static SVG_ID = "network-view";
 
+    static BENCHMARK_ACCELERATION_RADIO_NAME = "acceleration-radio-group";
     static BENCHMARK_RUN_BTN_ID = "benchmark-run-btn";
     static BENCHMARK_CLEAR_BTN_ID = "benchmark-clear-btn";
     static BENCHMARK_EXPORT_BTN_ID = "benchmark-export-btn";
@@ -71,7 +72,7 @@ class AppController {
     #onDataLoaded(data) {
 
         // Create and initialize the network view.
-        this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, data, "optimized");
+        this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, data, "accelerated");
         this.#networkView.updateViewport(new ViewportTransform({x: 0, y: 0, k: 1}));
 
         // Create the benchmark and results chart.
@@ -80,6 +81,7 @@ class AppController {
         this.#benchmark = new Benchmark(this.#networkView, resultsSvg);
 
         // Wire the event handlers.
+        $(`input[type='radio'][name='${AppController.BENCHMARK_ACCELERATION_RADIO_NAME}']`).on("change", () => this.#onBenchmarkAccelerationChanged());
         $(`#${AppController.BENCHMARK_ITERATIONS_INPUT_ID}`).on("input", () => this.#onBenchmarkIterationsChanged());
         $(`#${AppController.BENCHMARK_RUN_BTN_ID}`).on("click", () => this.#onBenchmarkRunClicked());
         $(`#${AppController.BENCHMARK_CLEAR_BTN_ID}`).on("click", () => this.#onBenchmarkClearClicked());
@@ -99,6 +101,19 @@ class AppController {
         $(`#${AppController.PERIPHERY_PLOT_TOGGLE_ID}`).prop("checked", true);
         this.#networkView.setPeripheryPlotVisibility(true);
 
+    }
+
+    #onBenchmarkAccelerationChanged() {
+        //
+        let selected = $(`input[type='radio'][name='${AppController.BENCHMARK_ACCELERATION_RADIO_NAME}']:checked`).val();
+
+        // Create and initialize the network view.
+        console.log(`${selected}`);
+        $(`#${AppController.SVG_ID}`).remove();
+        $(`#${AppController.CHART_WRAPPER_ID}`).append(`<svg id="${AppController.SVG_ID}" width="800" height="800"></svg>`);
+        this.#networkView = new NetworkView(`#${AppController.SVG_ID}`, DataManager.model, selected);
+        let resultsSvg = $(`#${AppController.BENCHMARK_RESULTS_SVG_ID}`);
+        this.#benchmark = new Benchmark(this.#networkView, resultsSvg);
     }
 
     #onBenchmarkIterationsChanged() {

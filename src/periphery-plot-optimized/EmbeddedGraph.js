@@ -123,6 +123,16 @@ class EmbeddedGraph {
         // Build the Delaunay triangulation from the flat array of points.
         this.delaunay = new d3.Delaunay(points);
         // console.log(`Rebuilt embedded graph.`);
+
+        // Set up the goemetry adjacency lists using the Delaunay triangulation.
+        this.nodeMap.forEach((node, nodeId) => {
+            let delaunayId = this.nodeToDelaunayMap.get(nodeId);
+            node.geoAdjacencyList = Array.from(
+                this.delaunay.neighbors(delaunayId)
+                    .map(delId => this.delaunayToNodeMap.get(delId)
+                )
+            );
+        });
     }
 
     /**
@@ -218,10 +228,18 @@ class EmbeddedGraph {
                     inView.set(current.id, current);
                 }
 
+                // NOTE - this option is about 10x slower than doing the neighbors lookup once and then storing in an adjacency list (other implementation).
                 // Add the current node's delaunay neighbors to the queue, if they have not already been explored.
-                let delaunayId = this.nodeToDelaunayMap.get(current.id);
-                this.delaunay.neighbors(delaunayId).forEach(neighborDelaunayId => {
-                    let neighborId = this.delaunayToNodeMap.get(neighborDelaunayId);
+                // let delaunayId = this.nodeToDelaunayMap.get(current.id);
+                // this.delaunay.neighbors(delaunayId).forEach(neighborDelaunayId => {
+                //     let neighborId = this.delaunayToNodeMap.get(neighborDelaunayId);
+                //     if (!explored.has(neighborId)) {
+                //         queue.push(this.nodeMap.get(neighborId));
+                //     }
+                // });
+
+                // Add the current node's delaunay neighbors to the queue, if they have not already been explored.
+                current.geoAdjacencyList.forEach(neighborId => {
                     if (!explored.has(neighborId)) {
                         queue.push(this.nodeMap.get(neighborId));
                     }

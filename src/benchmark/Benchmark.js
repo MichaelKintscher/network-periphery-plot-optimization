@@ -55,9 +55,15 @@ class Benchmark {
         let endTime = Date.now() - startTime;
         console.log(`Benchmark completed in ${endTime} ms for ${iterations} iterations.\nAverage time per iteration: ${endTime / iterations} ms.\nIntersections found: ${results.intersections.length}`);
 
+        // Get the nodes in view.
+        if (!results.inView) {
+            results.inView = this.#networkView.getNodesInView();
+            console.log(`Found ${results.inView.size} nodes in view.`);
+        }
+
         // Add the data point to the line chart.
         if (this.#lineChart) {
-            this.#lineChart.addResult(results.inView.size, endTime);
+            this.#lineChart.addResult(results.inView.size, endTime / iterations);
         }
 
         // Get the current viewport transform.
